@@ -7,46 +7,52 @@ import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.SyndFeedOutput;
 import org.springframework.stereotype.Repository;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Repository
-public class SyndFeedRepository {
+public class FeedFileSystemRepository {
 
     private final File localStore;
 
-    public SyndFeedRepository() {
+    public FeedFileSystemRepository() {
 
         File workingDirectory = new File("").getAbsoluteFile();
 
-        localStore = new File(workingDirectory, ".rss-feeds");
+        localStore = new File(workingDirectory, ".feeds");
 
         localStore.mkdirs();
 
     }
 
-    public String save(SyndFeed feed) {
+    public String save(Feed feed) {
 
         try {
 
             // TODO: save the feed to the file system
 
             // lookup the key
-            String feedKey = FeedKey.fromFeed(feed);
+            String feedKey = FeedFileSystemKey.fromFeedId(feed.getId());
 
-            System.out.println("Save: " + feed.getUri() + " using key: " + feedKey);
+            System.out.println("Save: " + feed.getId() + " using key: " + feedKey);
 
             File feedDirectory = new File(localStore, feedKey);
 
             if (!feedDirectory.exists()) {
-
                 feedDirectory.mkdirs();
+            }
 
+            File feedProperties = new File(feedDirectory,  "feed.properties");
+            if(!feedProperties.exists()) {
+                feedProperties.createNewFile();
+                Properties props = new Properties();
+                props.setProperty("feedId", feed.getId().id());
+                props.setProperty("feedUrl", feed.getUrl());
+                try(FileWriter fw = new FileWriter(feedProperties)) {
+                    props.store(fw, "Feed Properties for " + feed.getUrl());
+                }
             }
 
             File cachedFeed = new File(feedDirectory, "cached-feed.xml");
@@ -56,7 +62,7 @@ public class SyndFeedRepository {
                 try (Writer writer = new FileWriter(cachedFeed)) {
                     SyndFeedOutput output = new SyndFeedOutput();
 
-                    output.output(feed, writer);
+                    output.output(feed.getSyndFeed(), writer);
 
                     System.out.println("RSS feed successfully written to: " + cachedFeed.getAbsolutePath());
 
@@ -84,46 +90,46 @@ public class SyndFeedRepository {
         File[] rssDirectories = localStore.listFiles();
 
         return Stream.of(rssDirectories)
-                .map( SyndFeedRepository::readSynd )
+                .map( FeedFileSystemRepository::readFeed)
                 .filter(Objects::nonNull)
-                .map( SyndFeedRepository::mapSyndToFeedDetails )
+                .map( FeedFileSystemRepository::mapFeedDetails)
                 .sorted(Comparator.comparing(FeedDetails::getPublishedDate).reversed())
                 .collect(Collectors.toList());
 
     }
 
-    private static FeedDetails mapSyndToFeedDetails(SyndFeed syndFeed) {
+    private static FeedDetails mapFeedDetails(Feed feed) {
         return new FeedDetails() {
 
             @Override
             public String getId() {
-                return syndFeed.getUri();
+                return feed.getId().id();
             }
 
             @Override
             public String getTitle() {
-                return syndFeed.getTitle();
+                return feed.getSyndFeed().getTitle();
             }
 
             @Override
             public Date getPublishedDate() {
-                return syndFeed.getPublishedDate();
+                return feed.getSyndFeed().getPublishedDate();
             }
 
             @Override
             public FeedDetailsLinks getLinks() {
-                Optional<SyndLink> feed = syndFeed.getLinks().stream().filter(l -> l.getRel().equals("self")).findFirst();
-                Optional<SyndLink> site = syndFeed.getLinks().stream().filter(l -> l.getRel().equals("alternative")).findFirst();
+                Optional<SyndLink> feedLink = feed.getSyndFeed().getLinks().stream().filter(l -> l.getRel().equals("self")).findFirst();
+                Optional<SyndLink> siteLink = feed.getSyndFeed().getLinks().stream().filter(l -> l.getRel().equals("alternative")).findFirst();
                 return new FeedDetailsLinks() {
 
                     @Override
                     public String getSiteHref() {
-                        return site.map(SyndLink::getHref).orElse(syndFeed.getLink());
+                        return siteLink.map(SyndLink::getHref).orElse(feed.getSyndFeed().getLink());
                     }
 
                     @Override
                     public String getFeedHref() {
-                        return feed.map(SyndLink::getHref).orElse(null);
+                        return feedLink.map(SyndLink::getHref).orElse(feed.getUrl());
                     }
                 };
             }
@@ -131,7 +137,7 @@ public class SyndFeedRepository {
         };
     }
 
-    private static SyndFeed readSynd(File rssDirectory) {
+    private static Feed readFeed(File rssDirectory) {
 
         try {
 
@@ -142,7 +148,19 @@ public class SyndFeedRepository {
             }
 
             SyndFeedInput input = new SyndFeedInput();
-            return input.build(cachedFile);
+            SyndFeed feed = input.build(cachedFile);
+
+            File propertiesFile = new File(rssDirectory, "feed.properties");
+
+            Properties properties = new Properties();
+            try(FileReader fr = new FileReader(propertiesFile)) {
+            properties.load(fr);
+            }
+
+            FeedId feedId = new FeedId( properties.getProperty("feedId") );
+            String feedUrl = properties.getProperty("feedUrl");
+
+            return new Feed( feedId, feedUrl, feed );
 
         } catch (IOException e) {
             throw new RuntimeException(e);

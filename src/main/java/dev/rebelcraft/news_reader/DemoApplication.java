@@ -1,6 +1,6 @@
 package dev.rebelcraft.news_reader;
 
-import dev.rebelcraft.news_reader.feeds.RssFeeds;
+import dev.rebelcraft.news_reader.feeds.Feeds;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,11 +14,11 @@ public class DemoApplication {
 	}
 
 	@Bean
-	CommandLineRunner commandLineRunner(RssFeeds rssFeeds) {
+	CommandLineRunner commandLineRunner(Feeds feeds) {
 		return args -> {
 
-			String robin = rssFeeds.add( "https://robintegg.com/feed.xml" );
-			String owen = rssFeeds.add("https://blog.owenlacey.dev/feed.xml");
+			String robin = feeds.add( "https://robintegg.com/feed.xml" );
+			String owen = feeds.add("https://blog.owenlacey.dev/feed.xml");
 
 
 		};

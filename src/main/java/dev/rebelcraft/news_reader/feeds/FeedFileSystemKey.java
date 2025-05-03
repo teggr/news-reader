@@ -1,31 +1,17 @@
 package dev.rebelcraft.news_reader.feeds;
 
-import com.rometools.rome.feed.synd.SyndFeed;
-
-public class FeedKey {
+public class FeedFileSystemKey {
 
     /**
      * Converts an arbitrary string to a valid filesystem directory name by replacing
      * characters that are typically problematic with underscores, including periods.
      *
-     * @param feed The input string to convert.
+     * @param feedId The input string to convert.
      * @return A string that is likely to be a valid and safe directory name.
      */
-    public static String fromFeed(SyndFeed feed) {
+    public static String fromFeedId(FeedId feedId) {
 
-        String input = feed.getUri();
-
-        if (input == null || input.isEmpty()) {
-            input = feed.getLink();
-        }
-
-        if (input == null || input.isEmpty()) {
-            input = feed.getTitle();
-        }
-
-        if (input == null || input.isEmpty()) {
-            input = feed.getAuthor();
-        }
+        String input = feedId.id();
 
         // 1. Trim leading and trailing whitespace
         String trimmedInput = input.trim();

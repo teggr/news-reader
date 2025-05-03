@@ -33,4 +33,4 @@ build/
 .vscode/
 
 ### RSS Feeds ###
-.rss-feeds/
+.feeds/
