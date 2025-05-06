@@ -170,4 +170,31 @@ public class FeedFileSystemRepository {
 
     }
 
+    public List<EntryDetails> findAllEntries() {
+
+        File[] rssDirectories = localStore.listFiles();
+
+        return Stream.of(rssDirectories)
+                .map( FeedFileSystemRepository::readFeed )
+                .filter(Objects::nonNull)
+                .flatMap(FeedFileSystemRepository::mapFeedEntry)
+                .sorted(Comparator.comparing(EntryDetails::getPublishedDate).reversed())
+                .collect(Collectors.toList());
+    }
+    private static Stream<EntryDetails> mapFeedEntry(Feed feed) {
+        return feed.getSyndFeed().getEntries().stream()
+                .map(entry -> new EntryDetails() {
+
+                    @Override
+                    public String title() {
+                        return entry.getTitle();
+                    }
+
+                    @Override
+                    public Date getPublishedDate() {
+                        return entry.getPublishedDate();
+                    }
+
+                });
+    }
 }

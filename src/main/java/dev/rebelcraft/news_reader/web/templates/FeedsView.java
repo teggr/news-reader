@@ -1,6 +1,5 @@
 package dev.rebelcraft.news_reader.web.templates;
 
-import dev.rebelcraft.news_reader.feeds.EntryDetails;
 import dev.rebelcraft.news_reader.feeds.FeedDetails;
 import j2html.TagCreator;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,7 +16,7 @@ import java.util.Map;
 import static j2html.TagCreator.each;
 
 @Component
-public class HomeView implements View {
+public class FeedsView implements View {
 
     @Override
     public String getContentType() {
@@ -28,17 +27,19 @@ public class HomeView implements View {
     public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         // get the model
-        List<EntryDetails> entryDetails = (List<EntryDetails>) model.get("entries");
+        List<FeedDetails> feeds = (List<FeedDetails>) model.get("feeds");
 
         // build the view
 
         ReaderLayout readerLayout = new ReaderLayout();
 
         readerLayout.addContent( each(
-                entryDetails,
-                entry -> each(
-                        TagCreator.text(entry.title()),
-                        TagCreator.text(entry.getPublishedDate().toInstant().atOffset(ZoneOffset.UTC).toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                feeds,
+                feed -> each(
+                        TagCreator.text(feed.getTitle()),
+                        TagCreator.text(feed.getPublishedDate().toInstant().atOffset(ZoneOffset.UTC).toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)),
+                        TagCreator.text(feed.getLinks().getFeedHref()),
+                        TagCreator.text(feed.getLinks().getSiteHref())
                 )
         ) );
 

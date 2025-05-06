@@ -51,4 +51,7 @@ public class Feeds {
         return feedRepository.findAll();
     }
 
+    public List<EntryDetails> getLatestEntries() {
+        return feedRepository.findAllEntries();
+    }
 }

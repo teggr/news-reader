@@ -7,19 +7,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/")
-public class HomeController {
+@RequestMapping("/feeds")
+public class FeedController {
 
     private final Feeds feeds;
 
-    public HomeController(Feeds feeds) {
+    public FeedController(Feeds feeds) {
         this.feeds = feeds;
     }
 
     @GetMapping
     public String home(Model model) {
-        model.addAttribute("entries", feeds.getLatestEntries());
-        return "homeView";
+        model.addAttribute("feeds", feeds.getAllFeedDetails());
+        return "feedView";
     }
 
 }
